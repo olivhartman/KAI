@@ -306,7 +306,7 @@ Stores multiple moods/expressions of KAI for image/video generation
 **Columns:**
 - Wardrobe ID: WARD001, WARD002...
 - Outfit Name: "Red Bull Racing Shirt", "Ferrari Cap"
-- R2 URL: Image of outfit
+- R2 URL: Image of outfit  https://pub-b950cb87774b4e2eb3b2293cea84bafe.r2.dev
 - Team/Brand: Which F1 team
 - Auto-Select Rule: Logic for automation
   - Example: `IF team=McLaren AND result=WIN`
