@@ -1,0 +1,338 @@
+{
+  "name": "KAI - Daily F1 Research & Topic Discovery",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Daily 6 AM SGT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "notes": "Triggers every day at 6:00 AM Singapore Time (GMT+8)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "perplexityApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "llama-3.1-sonar-large-128k-online"
+            },
+            {
+              "name": "messages",
+              "value": "={{ [{\"role\": \"system\", \"content\": \"You are a Formula 1 news researcher. Find the most trending, breaking, and engaging F1 stories from the last 24 hours. Focus on: race results, driver incidents, team news, championship updates, controversies, technical updates, and fan-engaging stories.\"}, {\"role\": \"user\", \"content\": \"What are the top 5 most trending Formula 1 news stories RIGHT NOW? For each story: 1) Give a catchy headline, 2) Rate trending score 1-10, 3) Summarize key points in 2-3 sentences, 4) Identify which teams/drivers are involved, 5) Suggest content ideas (reaction video, infographic, or lifestyle post). Format as JSON array.\"}] }}"
+            },
+            {
+              "name": "temperature",
+              "value": "0.2"
+            },
+            {
+              "name": "max_tokens",
+              "value": "2000"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "perplexity-research",
+      "name": "Perplexity F1 Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300],
+      "notes": "Queries Perplexity for latest F1 news with web search"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Perplexity response and structure data for Google Sheets\nconst response = $input.item.json;\nconst currentDate = new Date().toISOString().split('T')[0];\nconst currentTime = new Date().toLocaleTimeString('en-US', { \n  hour12: false, \n  hour: '2-digit', \n  minute: '2-digit',\n  timeZone: 'Asia/Singapore'\n});\n\n// Extract the actual content from Perplexity response\nlet content = response.choices[0].message.content;\n\n// Try to parse JSON from the content\nlet topics;\ntry {\n  // Remove markdown code blocks if present\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '');\n  topics = JSON.parse(content);\n} catch (e) {\n  // If parsing fails, create a simple structure from the text\n  topics = [{\n    headline: content.substring(0, 200),\n    trending_score: 7,\n    key_points: content.substring(0, 300),\n    teams_drivers: 'Various',\n    content_ideas: 'Reaction video',\n    sources: response.citations ? response.citations.map(c => c.url).join(', ') : 'N/A'\n  }];\n}\n\n// Convert topics to Google Sheets rows\nconst sheetRows = topics.map(topic => ({\n  json: {\n    date: currentDate,\n    research_time: currentTime,\n    status: topic.trending_score >= 8 ? 'HIGH_PRIORITY' : 'COMPLETED',\n    topic: topic.headline || topic.title || 'Untitled',\n    trending_score: topic.trending_score || 5,\n    source_urls: topic.sources || (response.citations ? response.citations.map(c => c.url).join(', ') : ''),\n    key_points: topic.key_points || topic.summary || 'No details',\n    content_ideas: topic.content_ideas || 'Reaction video',\n    assigned_workflow: topic.trending_score >= 8 ? 'Long-form + Short' : 'Single Image',\n    priority: topic.trending_score >= 8 ? 'HIGH' : (topic.trending_score >= 6 ? 'MEDIUM' : 'LOW'),\n    teams_drivers: topic.teams_drivers || 'General',\n    notes: '',\n    perplexity_query: 'Latest F1 news ' + currentDate\n  }\n}));\n\nreturn sheetRows;"
+      },
+      "id": "parse-research",
+      "name": "Parse Research Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "Structures Perplexity response for Google Sheets format"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_YOUR_MASTER_CONTROL_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "F1 Research & Control"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ $json.date }}",
+            "research_time": "={{ $json.research_time }}",
+            "status": "={{ $json.status }}",
+            "topic": "={{ $json.topic }}",
+            "trending_score": "={{ $json.trending_score }}",
+            "source_urls": "={{ $json.source_urls }}",
+            "key_points": "={{ $json.key_points }}",
+            "content_ideas": "={{ $json.content_ideas }}",
+            "assigned_workflow": "={{ $json.assigned_workflow }}",
+            "priority": "={{ $json.priority }}",
+            "teams_drivers": "={{ $json.teams_drivers }}",
+            "notes": "={{ $json.notes }}",
+            "perplexity_query": "={{ $json.perplexity_query }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {"id": "date", "displayName": "Date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "research_time", "displayName": "Research Time", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "status", "displayName": "Status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "topic", "displayName": "Topic/Event", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "trending_score", "displayName": "Trending Score (1-10)", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true},
+            {"id": "source_urls", "displayName": "Source URLs", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "key_points", "displayName": "Key Points", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "content_ideas", "displayName": "Content Ideas Generated", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "assigned_workflow", "displayName": "Assigned to Workflow", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "priority", "displayName": "Priority", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "teams_drivers", "displayName": "Team/Driver Mentioned", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "notes", "displayName": "Notes", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "perplexity_query", "displayName": "Perplexity Query", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true}
+          ]
+        },
+        "options": {}
+      },
+      "id": "write-to-sheet",
+      "name": "Write to Master Control",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [850, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2 API"
+        }
+      },
+      "notes": "Appends research results to Master Control sheet"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "high-priority-filter",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "HIGH_PRIORITY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-high-priority",
+      "name": "Filter High Priority (8-10)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 300],
+      "notes": "Only process topics with trending score 8-10"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_YOUR_LONGFORM_TRACKER_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "YouTube Long-Form"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "video_id": "={{ 'YT' + $now.format('yyyyMMdd') + '_' + $itemIndex }}",
+            "publish_date": "={{ $json.date }}",
+            "status": "DRAFT",
+            "topic": "={{ $json.topic }}",
+            "video_type": "Reaction",
+            "wardrobe_selected": "",
+            "emotion": "",
+            "script_generated": "",
+            "intro_clip_url": "https://r2.kai.ai/intro-5s.mp4",
+            "main_content_urls": "",
+            "outro_clip_url": "https://r2.kai.ai/outro-5s.mp4",
+            "merged_video_url": "",
+            "thumbnail_url": "",
+            "seo_title": "",
+            "description": "",
+            "tags": "={{ '#F1 #Formula1 #' + $json.teams_drivers.replace(' ', '') }}",
+            "youtube_url": "",
+            "comment_posted": "NO",
+            "cta_url": "https://kai.bio/subscribe",
+            "error_log": ""
+          },
+          "matchingColumns": [],
+          "schema": [
+            {"id": "video_id", "displayName": "Video ID", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "publish_date", "displayName": "Publish Date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "status", "displayName": "Status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "topic", "displayName": "Topic/Title", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true}
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-video-draft",
+      "name": "Create Video Draft",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1250, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2 API"
+        }
+      },
+      "notes": "Creates new draft entry in YouTube Long-Form tracker for high-priority topics"
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "YOUR_TELEGRAM_ADMIN_CHAT_ID",
+        "text": "=🔔 **KAI Research Alert**\n\n📅 {{ $json.date }}\n🔥 High Priority Topic Found!\n\n**Topic:** {{ $json.topic }}\n**Trending Score:** {{ $json.trending_score }}/10\n**Teams/Drivers:** {{ $json.teams_drivers }}\n\n**Key Points:**\n{{ $json.key_points }}\n\n**Content Ideas:**\n{{ $json.content_ideas }}\n\n✅ Draft video created automatically\n🎬 Ready for script generation workflow",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "notify-admin",
+      "name": "Notify Admin (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1250, 400],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_BOT_CREDENTIAL_ID",
+          "name": "Telegram Bot API"
+        }
+      },
+      "notes": "Sends notification when high-priority topic is found"
+    }
+  ],
+  "connections": {
+    "Daily 6 AM SGT": {
+      "main": [
+        [
+          {
+            "node": "Perplexity F1 Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity F1 Research": {
+      "main": [
+        [
+          {
+            "node": "Parse Research Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Research Data": {
+      "main": [
+        [
+          {
+            "node": "Write to Master Control",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write to Master Control": {
+      "main": [
+        [
+          {
+            "node": "Filter High Priority (8-10)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter High Priority (8-10)": {
+      "main": [
+        [
+          {
+            "node": "Create Video Draft",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "YOUR_ERROR_HANDLER_WORKFLOW_ID"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2026-02-11T10:00:00.000Z",
+      "updatedAt": "2026-02-11T10:00:00.000Z",
+      "id": "kai-research",
+      "name": "KAI-Research"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-02-11T10:00:00.000Z",
+  "versionId": "1"
+}
