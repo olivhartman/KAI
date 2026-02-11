@@ -1,0 +1,435 @@
+{
+  "video_generation_config": {
+    "version": "1.0",
+    "last_updated": "2026-02-11",
+    "description": "KAI AI Influencer - Video Generation Requirements and Configuration",
+    
+    "character_settings": {
+      "name": "KAI",
+      "description": "AI Formula 1 influencer - young, energetic, knowledgeable F1 expert",
+      "personality_traits": [
+        "Passionate about F1",
+        "Data-driven analysis",
+        "Engaging storytelling",
+        "Casual yet professional tone",
+        "Excited about racing drama"
+      ],
+      "target_audience": "F1 fans aged 18-45, global audience",
+      "languages": ["English (primary)", "Mandarin (future)", "Spanish (future)"]
+    },
+    
+    "character_references": {
+      "base_url": "https://r2.kai.ai/character/",
+      "moods": [
+        {
+          "id": "CHAR001",
+          "name": "neutral",
+          "filename": "kai-neutral.png",
+          "description": "Default neutral expression",
+          "use_cases": ["General content", "News delivery", "Analysis"]
+        },
+        {
+          "id": "CHAR002",
+          "name": "happy",
+          "filename": "kai-happy.png",
+          "description": "Smiling, positive expression",
+          "use_cases": ["Wins", "Celebrations", "Positive news"]
+        },
+        {
+          "id": "CHAR003",
+          "name": "excited",
+          "filename": "kai-excited.png",
+          "description": "Very excited, enthusiastic",
+          "use_cases": ["Breaking news", "Controversial topics", "Race highlights"]
+        },
+        {
+          "id": "CHAR004",
+          "name": "shocked",
+          "filename": "kai-shocked.png",
+          "description": "Surprised, disbelief",
+          "use_cases": ["Unexpected results", "Crashes", "Shocking news"]
+        },
+        {
+          "id": "CHAR005",
+          "name": "thinking",
+          "filename": "kai-thinking.png",
+          "description": "Thoughtful, analytical",
+          "use_cases": ["Technical analysis", "Strategy discussion", "Predictions"]
+        },
+        {
+          "id": "CHAR006",
+          "name": "concerned",
+          "filename": "kai-concerned.png",
+          "description": "Worried, serious expression",
+          "use_cases": ["Safety issues", "Penalties", "Controversies"]
+        },
+        {
+          "id": "CHAR007",
+          "name": "disappointed",
+          "filename": "kai-disappointed.png",
+          "description": "Sad, disappointed look",
+          "use_cases": ["Losses", "DNFs", "Bad news"]
+        },
+        {
+          "id": "CHAR008",
+          "name": "skeptical",
+          "filename": "kai-skeptical.png",
+          "description": "Doubtful, questioning",
+          "use_cases": ["Controversial decisions", "Rumors", "Debates"]
+        },
+        {
+          "id": "CHAR009",
+          "name": "determined",
+          "filename": "kai-determined.png",
+          "description": "Focused, serious",
+          "use_cases": ["Pre-race build-up", "Championship battles", "Intense moments"]
+        },
+        {
+          "id": "CHAR010",
+          "name": "laughing",
+          "filename": "kai-laughing.png",
+          "description": "Laughing, amused",
+          "use_cases": ["Funny moments", "Team radio highlights", "Memes"]
+        },
+        {
+          "id": "CHAR011",
+          "name": "angry",
+          "filename": "kai-angry.png",
+          "description": "Frustrated, upset",
+          "use_cases": ["Unfair penalties", "Collisions", "Complaints"]
+        },
+        {
+          "id": "CHAR012",
+          "name": "cool",
+          "filename": "kai-cool.png",
+          "description": "Confident, cool demeanor",
+          "use_cases": ["Intros", "Outros", "Lifestyle content"]
+        },
+        {
+          "id": "CHAR013",
+          "name": "confused",
+          "filename": "kai-confused.png",
+          "description": "Puzzled, uncertain",
+          "use_cases": ["Confusing rules", "Unclear situations", "Mysteries"]
+        },
+        {
+          "id": "CHAR014",
+          "name": "proud",
+          "filename": "kai-proud.png",
+          "description": "Proud, satisfied",
+          "use_cases": ["Achievements", "Milestones", "Records broken"]
+        },
+        {
+          "id": "CHAR015",
+          "name": "sarcastic",
+          "filename": "kai-sarcastic.png",
+          "description": "Sarcastic, witty expression",
+          "use_cases": ["Commentary on obvious mistakes", "Ironic moments"]
+        },
+        {
+          "id": "CHAR016",
+          "name": "calm",
+          "filename": "kai-calm.png",
+          "description": "Peaceful, relaxed",
+          "use_cases": ["Explainers", "Tutorials", "Calm analysis"]
+        }
+      ]
+    },
+    
+    "wardrobe_library": {
+      "base_url": "https://r2.kai.ai/wardrobe/",
+      "outfits": [
+        {
+          "id": "WARD001",
+          "name": "Red Bull Racing Shirt",
+          "filename": "red-bull-shirt.png",
+          "auto_select_rule": "IF team=Red Bull AND result=WIN",
+          "description": "Official Red Bull Racing team shirt"
+        },
+        {
+          "id": "WARD002",
+          "name": "Ferrari Team Shirt",
+          "filename": "ferrari-shirt.png",
+          "auto_select_rule": "IF team=Ferrari AND result=WIN",
+          "description": "Official Ferrari team shirt"
+        },
+        {
+          "id": "WARD003",
+          "name": "McLaren Team Shirt",
+          "filename": "mclaren-shirt.png",
+          "auto_select_rule": "IF team=McLaren AND result=WIN",
+          "description": "Official McLaren team shirt"
+        },
+        {
+          "id": "WARD004",
+          "name": "Mercedes Team Shirt",
+          "filename": "mercedes-shirt.png",
+          "auto_select_rule": "IF team=Mercedes AND result=WIN",
+          "description": "Official Mercedes team shirt"
+        },
+        {
+          "id": "WARD005",
+          "name": "Casual F1 Fan Tee",
+          "filename": "casual-f1-tee.png",
+          "auto_select_rule": "DEFAULT",
+          "description": "Generic F1 fan t-shirt for general content"
+        },
+        {
+          "id": "WARD006",
+          "name": "Racing Hoodie",
+          "filename": "racing-hoodie.png",
+          "auto_select_rule": "IF season=winter OR weather=cold",
+          "description": "Motorsport hoodie for casual content"
+        },
+        {
+          "id": "WARD007",
+          "name": "Formal F1 Shirt",
+          "filename": "formal-shirt.png",
+          "auto_select_rule": "IF content_type=analysis OR content_type=professional",
+          "description": "Professional shirt for serious analysis"
+        },
+        {
+          "id": "WARD008",
+          "name": "Vintage Racing Jacket",
+          "filename": "vintage-jacket.png",
+          "auto_select_rule": "IF topic=history OR topic=legacy",
+          "description": "Retro racing jacket for historical content"
+        },
+        {
+          "id": "WARD009",
+          "name": "Pit Crew Polo",
+          "filename": "pit-polo.png",
+          "auto_select_rule": "IF content_type=technical OR topic=mechanics",
+          "description": "Technical pit crew style polo"
+        },
+        {
+          "id": "WARD010",
+          "name": "Race Day Jersey",
+          "filename": "race-jersey.png",
+          "auto_select_rule": "IF event_type=race_day",
+          "description": "Special race day jersey"
+        },
+        {
+          "id": "WARD011",
+          "name": "Aston Martin Shirt",
+          "filename": "aston-martin-shirt.png",
+          "auto_select_rule": "IF team=Aston Martin AND result=WIN",
+          "description": "Official Aston Martin team shirt"
+        },
+        {
+          "id": "WARD012",
+          "name": "Alpine Team Shirt",
+          "filename": "alpine-shirt.png",
+          "auto_select_rule": "IF team=Alpine AND result=WIN",
+          "description": "Official Alpine team shirt"
+        },
+        {
+          "id": "WARD013",
+          "name": "Racing Suit Top",
+          "filename": "racing-suit.png",
+          "auto_select_rule": "IF content_type=immersive OR special_event=TRUE",
+          "description": "Racing suit style top for special content"
+        },
+        {
+          "id": "WARD014",
+          "name": "Streetwear F1 Jacket",
+          "filename": "streetwear-jacket.png",
+          "auto_select_rule": "IF content_type=lifestyle",
+          "description": "Fashionable F1-themed streetwear"
+        },
+        {
+          "id": "WARD015",
+          "name": "Broadcaster Blazer",
+          "filename": "broadcaster-blazer.png",
+          "auto_select_rule": "IF content_type=interview OR content_type=commentary",
+          "description": "Professional broadcaster-style blazer"
+        }
+      ]
+    },
+    
+    "studio_assets": {
+      "background": {
+        "url": "https://r2.kai.ai/studio/background-1920x1080.png",
+        "description": "F1-themed studio background with racing elements",
+        "resolution": "1920x1080",
+        "format": "PNG with alpha channel"
+      },
+      "props": [
+        {
+          "id": "PROP001",
+          "name": "Racing Headphones",
+          "url": "https://r2.kai.ai/props/headphones.png",
+          "use_case": "Listening to team radio, audio content"
+        },
+        {
+          "id": "PROP002",
+          "name": "Water Bottle",
+          "url": "https://r2.kai.ai/props/water-bottle.png",
+          "use_case": "Casual moments, lifestyle content"
+        },
+        {
+          "id": "PROP003",
+          "name": "Tablet/iPad",
+          "url": "https://r2.kai.ai/props/tablet.png",
+          "use_case": "Showing data, telemetry, analysis"
+        }
+      ]
+    },
+    
+    "video_templates": {
+      "intro_clip": {
+        "url": "https://r2.kai.ai/templates/intro-5s.mp4",
+        "duration_seconds": 5,
+        "description": "Standard intro animation with KAI branding"
+      },
+      "outro_clip": {
+        "url": "https://r2.kai.ai/templates/outro-5s.mp4",
+        "duration_seconds": 5,
+        "description": "Standard outro with subscribe CTA"
+      },
+      "transition": {
+        "url": "https://r2.kai.ai/templates/transition-2s.mp4",
+        "duration_seconds": 2,
+        "description": "Transition between segments"
+      }
+    },
+    
+    "video_specifications": {
+      "long_form": {
+        "format": "MP4",
+        "resolution": "1920x1080",
+        "aspect_ratio": "16:9",
+        "target_duration": "5-10 minutes",
+        "fps": 30,
+        "bitrate": "5000 kbps",
+        "audio": {
+          "codec": "AAC",
+          "bitrate": "192 kbps",
+          "sample_rate": "48000 Hz"
+        }
+      },
+      "short_form": {
+        "format": "MP4",
+        "resolution": "1080x1920",
+        "aspect_ratio": "9:16",
+        "target_duration": "30-60 seconds",
+        "fps": 30,
+        "bitrate": "4000 kbps",
+        "audio": {
+          "codec": "AAC",
+          "bitrate": "128 kbps",
+          "sample_rate": "48000 Hz"
+        }
+      }
+    },
+    
+    "ai_generation_settings": {
+      "video_model": "Sora2",
+      "video_api": "https://api.openai.com/v1/video/generations",
+      "image_model": "KIE.ai",
+      "image_api": "https://api.kie.ai/v1/generate",
+      "voice_model": "Eleven Labs - Professional Male 1",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.8,
+        "style": 0.6,
+        "use_speaker_boost": true
+      }
+    },
+    
+    "content_guidelines": {
+      "tone": "Energetic but professional, passionate about F1",
+      "language_style": "Conversational, uses F1 terminology correctly",
+      "pacing": "Dynamic - fast for exciting moments, slower for analysis",
+      "hooks": [
+        "Start with a question",
+        "Lead with the most shocking fact",
+        "Use suspense for dramatic moments",
+        "Reference recent controversies"
+      ],
+      "dos": [
+        "Use driver names correctly",
+        "Explain technical terms for casual fans",
+        "Show passion for the sport",
+        "Back opinions with data",
+        "Engage with community comments"
+      ],
+      "donts": [
+        "Don't spread unconfirmed rumors",
+        "Don't be disrespectful to drivers/teams",
+        "Don't ignore safety concerns",
+        "Don't use clickbait without substance",
+        "Don't plagiarize other creators"
+      ]
+    },
+    
+    "platform_requirements": {
+      "youtube": {
+        "title_max_length": 100,
+        "description_max_length": 5000,
+        "tags_max_count": 15,
+        "thumbnail_resolution": "1280x720",
+        "thumbnail_format": "JPG or PNG",
+        "category": "Sports (17)",
+        "default_language": "en"
+      },
+      "tiktok": {
+        "caption_max_length": 150,
+        "hashtags_recommended": 5,
+        "max_duration": 60,
+        "aspect_ratio": "9:16"
+      },
+      "instagram": {
+        "reels_caption_max": 2200,
+        "hashtags_max": 30,
+        "hashtags_recommended": 10,
+        "max_duration": 90,
+        "aspect_ratio": "9:16"
+      },
+      "twitter": {
+        "text_max_length": 280,
+        "video_max_duration": 140,
+        "aspect_ratios": ["16:9", "9:16", "1:1"]
+      },
+      "telegram": {
+        "caption_max": 1024,
+        "video_max_size_mb": 50
+      }
+    },
+    
+    "seo_templates": {
+      "youtube_title_formats": [
+        "{DRIVER} {ACTION} at {EVENT}! | F1 {YEAR}",
+        "{TEAM} {RESULT} - {REACTION} | {EVENT} Analysis",
+        "BREAKING: {NEWS} | F1 Latest Update",
+        "{CONTROVERSIAL_TOPIC} Explained | F1 2026",
+        "Why {DRIVER} is {ADJECTIVE} | F1 Analysis"
+      ],
+      "default_tags": [
+        "Formula 1",
+        "F1",
+        "F1 2026",
+        "Formula 1 2026",
+        "F1 News",
+        "F1 Analysis",
+        "Grand Prix",
+        "Racing",
+        "Motorsport"
+      ]
+    },
+    
+    "workflow_integration": {
+      "script_generation": {
+        "model": "claude-sonnet-4",
+        "max_tokens": 4000,
+        "temperature": 0.7,
+        "system_prompt_url": "https://r2.kai.ai/prompts/script-generation-system.txt"
+      },
+      "thumbnail_generation": {
+        "model": "kie-ai-2.0",
+        "style": "Dynamic F1 action shot with text overlay",
+        "include_elements": ["KAI face", "Team colors", "Bold text", "F1 car if relevant"]
+      }
+    }
+  }
+}
