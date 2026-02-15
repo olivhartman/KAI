@@ -1,4 +1,4 @@
-KAI character images:
+**KAI character images**:
   
   kai_frontal.png          ← clear face, looking at camera
   
@@ -8,13 +8,13 @@ KAI character images:
   
   kai_ref_thinking.png     ← hand on chin, skeptical
 
-Background:
+**Background:**
   
   bedroom_ref1.png         ← gaming setup with LED lighting
   
   bedroom_ref2.png         ← different angle
 
-Wardrobe (per team):
+**Wardrobe (per team):**
   
   kai_wardrobe_mclaren.png
   
@@ -27,12 +27,12 @@ Wardrobe (per team):
   kai_wardrobe_default.png
 
 
-Videos:
+**Videos:**
 
   intro.mp4  https://pub-b950cb87774b4e2eb3b2293cea84bafe.r2.dev/asset/intro.mp4
   
   outro.mp4  https://pub-b950cb87774b4e2eb3b2293cea84bafe.r2.dev/asset/outro.mp4
 
-Voice:
+**Voice:**
   
   YOUR_KAI_VOICE_ID        ← from fal.ai create-voice endpoint
