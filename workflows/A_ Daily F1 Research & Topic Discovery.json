@@ -1,0 +1,483 @@
+{
+  "name": "A: Daily F1 Research & Topic Discovery",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 17 * * *"
+            }
+          ]
+        }
+      },
+      "id": "7acf4087-d769-470d-ac0b-09552f16d6a1",
+      "name": "Daily 5 PM EST (6AM SGT)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1008,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "perplexityApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"sonar\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a Formula 1 news researcher. Extract the top trending F1 stories from the last 24 hours. Return results ONLY as a JSON array with no markdown formatting.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Find the top 5 trending Formula 1 news stories RIGHT NOW. For each story, return a JSON object with these EXACT fields: headline (string), trending_score (number 1-10), key_points (string, 2-3 sentences), teams_drivers (string, teams/drivers mentioned), content_ideas (string), sources (string, comma-separated URLs). Return ONLY the JSON array, no other text or markdown.\"\n    }\n  ],\n  \"temperature\": 0.2,\n  \"max_tokens\": 1500\n}",
+        "options": {}
+      },
+      "id": "91e208d2-084c-4699-84e2-c7750a8a287a",
+      "name": "Perplexity F1 Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -800,
+        144
+      ],
+      "credentials": {
+        "perplexityApi": {
+          "id": "9H8SeKLuwrvoOOrg",
+          "name": "gtr34"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Perplexity response\nconst response = $input.item.json;\nconst currentDate = new Date().toISOString().split('T')[0];\nconst currentTime = new Date().toLocaleTimeString('en-US', { \n  hour12: false, \n  hour: '2-digit', \n  minute: '2-digit',\n  timeZone: 'America/New_York'\n});\n\nlet content = response.choices[0].message.content;\nlet topics = [];\n\n// Try to parse as JSON\ntry {\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  topics = JSON.parse(content);\n  if (!Array.isArray(topics)) {\n    topics = [topics];\n  }\n} catch (e) {\n  // Fallback parsing for markdown format\n  if (content.includes('##')) {\n    const sections = content.split('##').slice(1);\n    topics = sections.slice(0, 5).map((section) => {\n      const lines = section.split('\\n').filter(l => l.trim());\n      const headline = lines[0].replace(/^#+\\s*/, '').trim();\n      const bodyText = lines.slice(1).join(' ');\n      return {\n        headline: headline.substring(0, 200),\n        trending_score: 8,\n        key_points: bodyText.substring(0, 300).trim(),\n        teams_drivers: extractTeams(headline + ' ' + bodyText),\n        content_ideas: 'Reaction video',\n        sources: extractUrls(section).slice(0, 3).join(', ')\n      };\n    });\n  } else {\n    topics = [{\n      headline: 'F1 Research Summary',\n      trending_score: 7,\n      key_points: content.substring(0, 300),\n      teams_drivers: 'General',\n      content_ideas: 'General content',\n      sources: ''\n    }];\n  }\n}\n\nfunction extractTeams(text) {\n  const teams = ['Mercedes', 'Red Bull', 'Ferrari', 'McLaren', 'Aston Martin', \n                 'Alpine', 'Williams', 'RB', 'Haas', 'Sauber',\n                 'Verstappen', 'Hamilton', 'Leclerc', 'Norris', 'Russell'];\n  const found = teams.filter(team => text.toLowerCase().includes(team.toLowerCase()));\n  return found.length > 0 ? found.slice(0, 3).join(', ') : 'General';\n}\n\nfunction extractUrls(text) {\n  const urlRegex = /https?:\\/\\/[^\\s\\]\\)\\\"]+/g;\n  return text.match(urlRegex) || [];\n}\n\nif (!topics || topics.length === 0) {\n  topics = [{\n    headline: 'No topics found',\n    trending_score: 5,\n    key_points: 'No specific topics',\n    teams_drivers: 'General',\n    content_ideas: 'General content',\n    sources: ''\n  }];\n}\n\n// ✅ FIX: ALL topics get Status: COMPLETED so Workflow 2 picks them ALL up for image posts\n// High priority (>=8) ALSO get a YouTube draft created via the filter below\nconst sheetRows = topics.slice(0, 5).map(topic => ({\n  json: {\n    'Date': currentDate,\n    'Research Time': currentTime,\n    'Status': 'COMPLETED',\n    'TopicEvent': (topic.headline || 'Untitled').substring(0, 300),\n    'TrendingScore': topic.trending_score || 5,\n    'SourceURLs': (topic.sources || '').substring(0, 500),\n    'KeyPoints': (topic.key_points || 'No details').substring(0, 500),\n    'ContentIdeas': (topic.content_ideas || 'Reaction video').substring(0, 200),\n    'AssignedWorkflow': (topic.trending_score >= 8) ? 'Long-form + Short + Single Image' : 'Single Image',\n    'Priority': (topic.trending_score >= 8) ? 'HIGH' : 'MEDIUM',\n    'TeamDriver': (topic.teams_drivers || 'General').substring(0, 200),\n    'Notes': '',\n    'PerplexityQuery': 'Latest F1 news ' + currentDate,\n    'Tags': buildTags(topic.teams_drivers, topic.trending_score)\n  }\n}));\n\nfunction buildTags(teamsDrivers, score) {\n  // Split comma-separated teams/drivers into individual hashtags\n  const items = (teamsDrivers || 'General').split(',').map(t => t.trim()).filter(Boolean);\n  // Clean each item: remove spaces and special chars, prefix with #\n  const itemTags = items.slice(0, 4).map(t => '#' + t.replace(/[^a-zA-Z0-9]/g, ''));\n  // Base F1 tags always included\n  const baseTags = ['#F1', '#Formula1', '#F12026', '#boxboxwtf'];\n  // Combine, deduplicate, join with spaces\n  const allTags = [...new Set([...baseTags, ...itemTags])];\n  return allTags.join(' ');\n}\n\nreturn sheetRows;"
+      },
+      "id": "0e3b9ac8-6c44-4389-bbe8-d5714e202323",
+      "name": "Parse Research Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bmBgdCDNcefQhaEpuUmS5TeNMEUnoW2H--yIrynYzYQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "F1 Research & Control",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "id": "dda9a84f-bacb-4b23-9ae7-349066b447e2",
+      "name": "Write to Master Control",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        -400,
+        144
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qvKRG2SinDR7UYux",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.TrendingScore }}",
+              "rightValue": 8,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2f365f7e-e26a-45ec-9ee5-901fcdb49af8",
+      "name": "Filter High Priority (8-10)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "182x6TaC-CRZICpglT2AV5njY6d5tAYdp2TZqQMcZ41E",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YouTube Long-Form",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "VideoID": "={{ 'YT' + $now.format('yyyyMMdd') + '_' + $itemIndex }}",
+            "Status": "DRAFT",
+            "TopicTitle": "={{ $json.TopicEvent }}",
+            "VideoType": "Reaction",
+            "Tags": "={{ $json.Tags }}",
+            "PublishDate": "={{ $json.Date }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "VideoID",
+              "displayName": "VideoID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PublishDate",
+              "displayName": "PublishDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TopicTitle",
+              "displayName": "TopicTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "VideoType",
+              "displayName": "VideoType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WardrobeSelected",
+              "displayName": "WardrobeSelected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EmotionMood",
+              "displayName": "EmotionMood",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ScriptGenerated",
+              "displayName": "ScriptGenerated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "IntroClipURL",
+              "displayName": "IntroClipURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MainContentURLs",
+              "displayName": "MainContentURLs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "OutroClipURL",
+              "displayName": "OutroClipURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MergedVideoURL",
+              "displayName": "MergedVideoURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ThumbnailURL",
+              "displayName": "ThumbnailURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SEOTitle",
+              "displayName": "SEOTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tags",
+              "displayName": "Tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "YouTubeURL",
+              "displayName": "YouTubeURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CommentPosted",
+              "displayName": "CommentPosted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CTAURL",
+              "displayName": "CTAURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ErrorLog",
+              "displayName": "ErrorLog",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b7456b8e-c975-45d6-9fd8-d8d78c2fe423",
+      "name": "Create Video Draft",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qvKRG2SinDR7UYux",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7357730982",
+        "text": "=🔔 *KAI Research Complete*\n\n📅 {{ $json.Date }}\n🔥 High Priority Topic!\n\n*Topic:* {{ $json.TopicEvent }}\n*Trending Score:* {{ $json.TrendingScore }}/10\n*Teams/Drivers:* {{ $json.TeamDriver }}\n\n*Key Points:*\n{{ $json.KeyPoints }}\n\n*Content Ideas:*\n{{ $json.ContentIdeas }}\n\n✅ YouTube Draft created\n🖼️ Image post queued for W2\n🎬 Ready for Workflow 4",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "75ca9e0f-9c6e-4277-a3c1-e640075b4f8b",
+      "name": "Notify Admin (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        224
+      ],
+      "webhookId": "62ae1b5f-2bcd-4319-9df3-9d9b9906189b",
+      "credentials": {
+        "telegramApi": {
+          "id": "MOvyHX7wGqQJ4PTG",
+          "name": "boxboxagent_bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 5 PM EST (6AM SGT)": {
+      "main": [
+        [
+          {
+            "node": "Perplexity F1 Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity F1 Research": {
+      "main": [
+        [
+          {
+            "node": "Parse Research Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Research Data": {
+      "main": [
+        [
+          {
+            "node": "Write to Master Control",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write to Master Control": {
+      "main": [
+        [
+          {
+            "node": "Filter High Priority (8-10)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter High Priority (8-10)": {
+      "main": [
+        [
+          {
+            "node": "Create Video Draft",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9c2d2b90-31a6-49d3-acb8-a793927f62eb",
+  "meta": {
+    "instanceId": "c32fe3cd5f782c7a8364ac2825092b873a7a96b51b4ba300ce512c526cf602ee"
+  },
+  "id": "fdKTfXPCZylkuNQfm6ciY",
+  "tags": [
+    {
+      "updatedAt": "2026-02-11T05:27:03.469Z",
+      "createdAt": "2026-02-11T05:27:03.469Z",
+      "id": "zTAg3v2w77rF5qkU",
+      "name": "KAI-Research"
+    }
+  ]
+}
