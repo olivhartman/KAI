@@ -16,8 +16,8 @@ Wardrobe (per team):
   kai_wardrobe_default.png
 
 Videos:
-  intro.mp4
-  outro.mp4
+  intro.mp4  https://pub-b950cb87774b4e2eb3b2293cea84bafe.r2.dev/asset/intro.mp4
+  outro.mp4  https://pub-b950cb87774b4e2eb3b2293cea84bafe.r2.dev/asset/outro.mp4
 
 Voice:
   YOUR_KAI_VOICE_ID        ← from fal.ai create-voice endpoint
