@@ -1,3 +1,9 @@
+File1 is the Sony A7SIII + 35mm lens setup for her live stream, we will call it  "live-streaming-camera'. the measurement of the camera body (A7S III): 13cm x 10cm.
+Lens (35mm Prime): 10cm length.
+Total Rig Length: ~25cm (10 inches) including the mount.
+Mount Height: The center of the lens is positioned 122cm (48 inches) from the floor. 75cm (desk) + 47cm (pole) = 122cm. This aligns perfectly with the eye-level of KAI
+
+
 To maintain perfect consistency in Kling 3.0 and Nano Banana, we need to lock in these specific "Real-World" measurements. These numbers are calibrated for KAI’s height (**172cm**) and the standard **8ft (244cm)** ceiling of a 1970s Orange County home.
 
 ### **The "BOXBOX Studio" Blueprint**
